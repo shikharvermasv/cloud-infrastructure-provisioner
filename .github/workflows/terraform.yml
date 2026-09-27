@@ -41,7 +41,7 @@ jobs:
         run: terraform fmt -check -recursive ../..
 
       - name: Create Terraform variables
-        run: Copy-Item terraform.tfvars.example terraform.tfvars
+        run: cp terraform.tfvars.example terraform.tfvars
 
       - name: Terraform Init
         run: terraform init
