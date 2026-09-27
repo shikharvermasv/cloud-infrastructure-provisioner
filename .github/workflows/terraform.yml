@@ -1,6 +1,8 @@
 name: Terraform CI/CD
 
 on:
+  workflow_dispatch:
+
   pull_request:
     branches:
       - main
@@ -47,7 +49,10 @@ jobs:
 
   terraform-plan:
     name: Terraform Plan
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
+
     runs-on: ubuntu-latest
 
     permissions:
@@ -99,7 +104,10 @@ jobs:
   terraform-apply:
     name: Terraform Apply
     needs: terraform-plan
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
+
     runs-on: ubuntu-latest
 
     environment:
