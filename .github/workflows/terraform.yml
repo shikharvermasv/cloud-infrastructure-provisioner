@@ -121,9 +121,38 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Debug OIDC Claims
-        uses: github/actions-oidc-debugger@main
-        with:
-          audience: sts.amazonaws.com
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          response=$(curl -sS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com")
+
+          token=$(echo "$response" | jq -r '.value')
+
+          TOKEN="$token" python - <<'PY'
+          import os
+          import json
+          import base64
+
+          token = os.environ["TOKEN"]
+          payload = token.split(".")[1]
+          payload += "=" * (-len(payload) % 4)
+
+          claims = json.loads(
+              base64.urlsafe_b64decode(payload)
+          )
+
+          for key in [
+              "sub",
+              "aud",
+              "repository",
+              "repository_owner",
+              "environment"
+          ]:
+              print(f"{key}: {claims.get(key)}")
+          PY
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
