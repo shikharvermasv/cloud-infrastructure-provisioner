@@ -21,15 +21,12 @@ jobs:
       run:
         working-directory: terraform/environment/dev
 
-     steps:
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-
-      - name: Debug OIDC Claims
-        uses: github/actions-oidc-debugger@main
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
