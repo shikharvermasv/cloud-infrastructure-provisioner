@@ -44,6 +44,12 @@ resource "aws_instance" "private" {
     aws_security_group.private_ec2.id
   ]
 
+  user_data = <<-EOF
+    #!/bin/bash
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+  EOF
+
   tags = {
     Name        = "cloud-provisioner-${var.environment}-private-ec2"
     Environment = var.environment
