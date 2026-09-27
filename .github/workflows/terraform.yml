@@ -40,6 +40,9 @@ jobs:
       - name: Terraform Format Check
         run: terraform fmt -check -recursive ../..
 
+      - name: Create Terraform variables
+        run: Copy-Item terraform.tfvars.example terraform.tfvars
+
       - name: Terraform Init
         run: terraform init
 
