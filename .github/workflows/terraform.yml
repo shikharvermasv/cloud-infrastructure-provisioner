@@ -1,21 +1,54 @@
 name: Terraform CI
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
 
+  push:
+    branches:
+      - main
+
 permissions:
-  id-token: write
   contents: read
 
 jobs:
-  terraform:
-    name: Terraform Validation
+  terraform-validate:
+    name: Terraform Validate
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform/environment/dev
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive ../..
+
+      - name: Create Terraform variables
+        run: cp terraform.tfvars.example terraform.tfvars
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+
+  terraform-plan:
+    name: Terraform Plan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
 
     defaults:
       run:
@@ -51,5 +84,3 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan
-
-# OIDC trust policy updated
