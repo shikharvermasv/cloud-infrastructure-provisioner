@@ -40,3 +40,6 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+github-actions-terraform-policy.json
+github-oidc-trust-policy.json
