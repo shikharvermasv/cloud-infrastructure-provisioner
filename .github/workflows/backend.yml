@@ -1,3 +1,4 @@
+```yaml
 name: Backend CI
 
 on:
@@ -39,3 +40,7 @@ jobs:
 
       - name: Run tests
         run: python -m pytest -v
+
+      - name: Build Docker image
+        run: docker build -t cloud-provisioner-api:${{ github.sha }} .
+```
