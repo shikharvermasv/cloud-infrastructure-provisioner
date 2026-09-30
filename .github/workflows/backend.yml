@@ -1,4 +1,3 @@
-```yaml
 name: Backend CI
 
 on:
@@ -43,4 +42,3 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t cloud-provisioner-api:${{ github.sha }} .
-```
