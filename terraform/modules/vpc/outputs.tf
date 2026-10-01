@@ -26,6 +26,11 @@ output "private_route_table_id" {
   value = aws_route_table.private.id
 }
 
+output "public_subnet_2_id" {
+  description = "ID of the second public subnet"
+  value       = aws_subnet.public_2.id
+}
+
 # output "nat_gateway_id" {
 #   value = aws_nat_gateway.main.id
 # }

@@ -1,23 +1,19 @@
-data "aws_ami" "amazon_linux" {
-  most_recent = true
-
-  owners = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["al2023-ami-*-x86_64"]
-  }
-
-  filter {
-    name   = "state"
-    values = ["available"]
-  }
+data "aws_ssm_parameter" "amazon_linux" {
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
 }
 
 resource "aws_security_group" "private_ec2" {
   name        = "cloud-provisioner-${var.environment}-private-ec2-sg"
   description = "Security group for private EC2"
   vpc_id      = var.vpc_id
+
+  ingress {
+    description     = "Allow application traffic from ALB"
+    from_port       = 8000
+    to_port         = 8000
+    protocol        = "tcp"
+    security_groups = [var.alb_security_group_id]
+  }
 
   egress {
     from_port   = 0
@@ -34,7 +30,7 @@ resource "aws_security_group" "private_ec2" {
 }
 
 resource "aws_instance" "private" {
-  ami                         = data.aws_ami.amazon_linux.id
+  ami                         = data.aws_ssm_parameter.amazon_linux.value
   instance_type               = var.instance_type
   subnet_id                   = var.private_subnet_id
   iam_instance_profile        = var.instance_profile_name

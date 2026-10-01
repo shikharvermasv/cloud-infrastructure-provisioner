@@ -13,3 +13,7 @@ variable "private_subnet_ids" {
 variable "security_group_ids" {
   type = list(string)
 }
+
+variable "private_route_table_id" {
+  type = string
+}

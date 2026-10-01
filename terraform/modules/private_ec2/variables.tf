@@ -17,3 +17,8 @@ variable "instance_profile_name" {
 variable "instance_type" {
   type = string
 }
+
+variable "alb_security_group_id" {
+  description = "Security group ID allowed to access the application on port 8000"
+  type        = string
+}

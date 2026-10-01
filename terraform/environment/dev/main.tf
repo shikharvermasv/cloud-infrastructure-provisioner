@@ -21,28 +21,29 @@ provider "aws" {
 module "vpc" {
   source = "../../modules/vpc"
 
-  environment         = var.environment
-  vpc_cidr            = var.vpc_cidr
-  public_subnet_cidr  = var.public_subnet_cidr
-  private_subnet_cidr = var.private_subnet_cidr
-  availability_zone   = var.availability_zone
+  environment          = var.environment
+  vpc_cidr             = var.vpc_cidr
+  public_subnet_cidr   = var.public_subnet_cidr
+  public_subnet_2_cidr = var.public_subnet_2_cidr
+  private_subnet_cidr  = var.private_subnet_cidr
+  availability_zone    = var.availability_zone
+  availability_zone_2  = var.availability_zone_2
 }
+# module "ec2" {
+#   source = "../../modules/ec2"
 
-module "ec2" {
-  source = "../../modules/ec2"
+#   environment           = var.environment
+#   vpc_id                = module.vpc.vpc_id
+#   subnet_id             = module.vpc.public_subnet_id
+#   instance_type         = var.instance_type
+#   instance_profile_name = module.iam.instance_profile_name
+# }
 
-  environment           = var.environment
-  vpc_id                = module.vpc.vpc_id
-  subnet_id             = module.vpc.public_subnet_id
-  instance_type         = var.instance_type
-  instance_profile_name = module.iam.instance_profile_name
-}
+# module "iam" {
+#   source = "../../modules/iam"
 
-module "iam" {
-  source = "../../modules/iam"
-
-  environment = var.environment
-}
+#   environment = var.environment
+# }
 
 module "ssm" {
   source = "../../modules/ssm"
@@ -58,15 +59,28 @@ module "private_ec2" {
   vpc_id                = module.vpc.vpc_id
   instance_profile_name = module.ssm.instance_profile_name
   instance_type         = "t3.micro"
+  alb_security_group_id = module.alb.security_group_id
+}
+
+module "alb" {
+  source = "../../modules/alb"
+
+  environment              = var.environment
+  vpc_id                   = module.vpc.vpc_id
+  public_subnet_id         = module.vpc.public_subnet_id
+  public_subnet_2_id       = module.vpc.public_subnet_2_id
+  target_instance_id       = module.private_ec2.instance_id
+  target_security_group_id = module.private_ec2.security_group_id
 }
 
 module "vpc_endpoints" {
   source = "../../modules/vpc_endpoints"
 
-  environment        = var.environment
-  vpc_id             = module.vpc.vpc_id
-  private_subnet_ids = [module.vpc.private_subnet_id]
-  security_group_ids = [module.private_ec2.security_group_id]
+  environment            = var.environment
+  vpc_id                 = module.vpc.vpc_id
+  private_subnet_ids     = [module.vpc.private_subnet_id]
+  private_route_table_id = module.vpc.private_route_table_id
+  security_group_ids     = [module.private_ec2.security_group_id]
 }
 
 module "ecr" {

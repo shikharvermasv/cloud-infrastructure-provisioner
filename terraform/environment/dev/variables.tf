@@ -57,3 +57,13 @@ variable "private_subnet_cidr" {
     error_message = "private_subnet_cidr must be a valid IPv4 CIDR block."
   }
 }
+
+variable "public_subnet_2_cidr" {
+  description = "CIDR block for the second public subnet"
+  type        = string
+}
+
+variable "availability_zone_2" {
+  description = "Availability zone for the second public subnet"
+  type        = string
+}
