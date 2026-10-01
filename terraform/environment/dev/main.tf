@@ -79,7 +79,7 @@ module "ecr" {
 module "github_ecr" {
   source = "../../modules/github_ecr"
 
-  github_subject = "repo:shikharvermasv/cloud-infrastructure-provisioner:ref:refs/heads/main"
+  github_subject = "repo:shikharvermasv@130604353/cloud-infrastructure-provisioner@1390905790:ref:refs/heads/main"
 
   ecr_repository_arn = module.ecr.repository_arn
 }
