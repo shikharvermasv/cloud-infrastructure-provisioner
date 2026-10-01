@@ -70,6 +70,16 @@ output "ssm_instance_profile_name" {
   value = module.ssm.instance_profile_name
 }
 
+output "ecr_repository_url" {
+  description = "ECR repository URL for the backend"
+  value       = module.ecr.repository_url
+}
+
+output "github_ecr_role_arn" {
+  description = "IAM role ARN used by GitHub Actions to push images to ECR"
+  value       = module.github_ecr.role_arn
+}
+
 # output "nat_gateway_id" {
 #   value = module.vpc.nat_gateway_id
 # }

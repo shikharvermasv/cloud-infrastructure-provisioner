@@ -15,6 +15,10 @@ on:
       - "backend/**"
       - ".github/workflows/backend.yml"
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -37,8 +41,32 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run tests
+            - name: Run tests
         run: python -m pytest -v
 
       - name: Build Docker image
         run: docker build -t cloud-provisioner-api:${{ github.sha }} .
+
+      - name: Configure AWS credentials
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::194722443160:role/GitHubActions-ECR-CloudProvisioner
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker tag \
+            cloud-provisioner-api:${{ github.sha }} \
+            194722443160.dkr.ecr.us-east-1.amazonaws.com/cloud-provisioner-api:${{ github.sha }}
+
+      - name: Push Docker image to ECR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker push \
+            194722443160.dkr.ecr.us-east-1.amazonaws.com/cloud-provisioner-api:${{ github.sha }}

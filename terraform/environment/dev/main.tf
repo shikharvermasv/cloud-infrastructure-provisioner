@@ -69,6 +69,20 @@ module "vpc_endpoints" {
   security_group_ids = [module.private_ec2.security_group_id]
 }
 
+module "ecr" {
+  source = "../../modules/ecr"
+
+  repository_name = "cloud-provisioner-api"
+  environment     = var.environment
+}
+
+module "github_ecr" {
+  source = "../../modules/github_ecr"
+
+  github_subject = "repo:shikharvermasv/cloud-infrastructure-provisioner:ref:refs/heads/main"
+
+  ecr_repository_arn = module.ecr.repository_arn
+}
 # this is "moved" which is used to move to tf resources from one file to other with changes in the state file
 # moved {
 #   from = aws_vpc.main
