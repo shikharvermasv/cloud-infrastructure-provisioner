@@ -1,312 +1,480 @@
-# Cloud Infrastructure Provisioner
+# Cloud Infrastructure Provisioning & Deployment Platform
 
-A modular Infrastructure-as-Code project that provisions AWS cloud infrastructure using Terraform and deploys it through GitHub Actions with secure AWS OIDC authentication.
+A modular AWS Infrastructure-as-Code project that provisions cloud infrastructure using **Terraform** and demonstrates a secure application deployment workflow using **GitHub Actions, GitHub OIDC, Amazon ECR, Docker, AWS Systems Manager, and an Application Load Balancer**.
 
-The project demonstrates automated infrastructure provisioning, remote Terraform state management, IAM-based access, private EC2 management through AWS Systems Manager, VPC interface endpoints, and controlled CI/CD deployment workflows.
-
----
-
-## Architecture
-
-```text
-                                  GitHub
-                                     |
-                          Push / Pull Request
-                                     |
-                                     v
-                              GitHub Actions
-                                     |
-                     +---------------+---------------+
-                     |                               |
-                     v                               v
-              Terraform Validate              Terraform Plan
-                                                     |
-                                                     v
-                                            Plan Artifact
-                                                     |
-                                                     v
-                                           Environment Approval
-                                                     |
-                                                     v
-                                              Terraform Apply
-                                                     |
-                                                     | OIDC
-                                                     v
-                                      AWS IAM Deployment Role
-                                                     |
-                                                     v
-                                                  Terraform
-                                                     |
-                          +--------------------------+------------------+
-                          |                                             |
-                          v                                             v
-                    S3 Remote State                                AWS VPC
-                                                                        |
-                                          +-----------------------------+------------------+
-                                          |                                                |
-                                          v                                                v
-                                   Public Subnet                                      Private Subnet
-                                          |                                                |
-                                          v                                                v
-                                     Public EC2                                      Private EC2
-                                                                                         |
-                                                                                         v
-                                                                              VPC Interface Endpoints
-                                                                                         |
-                                                                                         v
-                                                                                AWS Systems Manager
-```
+The project was built to simulate a real-world cloud infrastructure and deployment environment while keeping the architecture reproducible, modular, and cost-conscious.
 
 ---
 
-## Project Overview
+## Overview
 
-This project is a modular AWS infrastructure provisioning platform built using Terraform and deployed through GitHub Actions.
+The project provisions an AWS environment containing:
 
-It provisions and manages AWS networking, compute, IAM, and Systems Manager resources using Infrastructure as Code.
-
-The project demonstrates:
-
-* Modular Terraform infrastructure
-* AWS VPC networking
-* Public and private subnet architecture
-* EC2 provisioning
-* IAM roles and instance profiles
-* Private EC2 management using AWS Systems Manager
-* VPC interface endpoints
-* S3 remote Terraform state
+* A custom VPC
+* Public and private subnets
+* Internet Gateway
+* Public and private route tables
+* Security groups
+* Private EC2 application host
+* AWS Systems Manager integration
+* VPC endpoints for private AWS service connectivity
+* Amazon ECR
+* Application Load Balancer
+* Terraform remote state in Amazon S3
 * GitHub Actions CI/CD
 * GitHub OIDC authentication
-* Protected infrastructure deployment with manual approval
-* Infrastructure lifecycle management
+* Dockerized FastAPI application deployment
+
+The infrastructure is defined as code using reusable Terraform modules.
+
+The application deployment flow was validated end-to-end:
+
+```text
+GitHub
+   |
+   v
+GitHub Actions
+   |
+   v
+Amazon ECR
+   |
+   v
+Private EC2
+   |
+   v
+Docker
+   |
+   v
+FastAPI
+   |
+   v
+Application Load Balancer
+   |
+   v
+Internet
+```
+
+The AWS infrastructure used for validation was subsequently destroyed using Terraform to avoid leaving unnecessary billable resources running.
 
 ---
 
-## What I Built
+# Architecture
 
-This project was built to simulate a real-world cloud infrastructure deployment workflow rather than manually creating AWS resources through the AWS Console.
+```text
+                              Internet
+                                  |
+                                  v
+                       +---------------------+
+                       | Application Load    |
+                       | Balancer            |
+                       | HTTP :80            |
+                       +----------+----------+
+                                  |
+                           HTTP :8000
+                                  |
+                                  v
+                    +-------------------------+
+                    | Private EC2             |
+                    |                         |
+                    | Docker                  |
+                    | FastAPI :8000           |
+                    +-----------+-------------+
+                                |
+              +-----------------+------------------+
+              |                 |                  |
+              v                 v                  v
+         ECR Endpoints    SSM Endpoints       S3 Gateway
+              |                 |                  |
+              v                 v                  |
+         Amazon ECR       AWS Systems Manager      |
+                                                   |
+                                                   v
+                                          Terraform State
 
-The infrastructure is defined using reusable Terraform modules and includes:
 
-* A custom AWS VPC
-* Public and private subnets
-* Internet Gateway and route tables
-* Public and private EC2 instances
-* IAM roles and instance profiles
-* AWS Systems Manager integration
-* Private VPC interface endpoints for Systems Manager
-* S3 remote Terraform state
-* GitHub Actions CI/CD
-* GitHub OIDC-based AWS authentication
-* Protected deployment approval before Terraform Apply
+GitHub
+   |
+   v
+GitHub Actions
+   |
+   | OIDC
+   v
+AWS IAM
+   |
+   v
+Temporary AWS Credentials
+   |
+   v
+Amazon ECR
+```
 
-The infrastructure can be created, validated, planned, deployed, managed, and destroyed through Infrastructure as Code.
+The application EC2 instance is intentionally placed in a **private subnet** and does not receive a public IP address.
 
-The project also focuses on understanding the security and operational considerations involved in deploying Terraform from a CI/CD pipeline, including IAM trust policies, temporary AWS credentials, remote state, deployment permissions, and private instance management.
-
----
-
-## Key Features
-
-* Modular Terraform architecture
-* AWS VPC provisioning
-* Public and private subnet architecture
-* Internet Gateway
-* Route tables and route associations
-* Security groups
-* Public EC2 instance
-* Private EC2 instance
-* IAM roles and policies
-* IAM instance profiles
-* AWS Systems Manager integration
-* SSM VPC interface endpoints
-* S3 remote Terraform state
-* GitHub Actions CI/CD
-* GitHub OIDC federation
-* Temporary AWS credentials through OIDC
-* GitHub Environment approval before Terraform Apply
-* Automated Terraform formatting checks
-* Automated Terraform validation
-* Terraform Plan artifact
-* Infrastructure provisioning and destruction through Terraform
-
----
-
-# Technology Stack
-
-| Technology          | Purpose                        |
-| ------------------- | ------------------------------ |
-| AWS                 | Cloud infrastructure           |
-| Terraform           | Infrastructure as Code         |
-| GitHub Actions      | CI/CD automation               |
-| GitHub OIDC         | Secure AWS authentication      |
-| Amazon VPC          | Network infrastructure         |
-| Amazon EC2          | Compute                        |
-| AWS IAM             | Identity and access management |
-| AWS Systems Manager | Private EC2 management         |
-| Amazon S3           | Terraform remote state         |
-| Linux               | EC2 operating environment      |
-| Git / GitHub        | Version control                |
+External application traffic reaches the instance through the **Application Load Balancer**.
 
 ---
 
-# AWS Architecture
+# Architecture Components
 
 ## VPC
 
-The project creates an AWS VPC to provide an isolated network for the infrastructure.
-
-Example VPC CIDR:
+The project creates an isolated AWS VPC.
 
 ```text
-10.0.0.0/16
+VPC CIDR: 10.0.0.0/16
 ```
 
-The VPC contains public and private subnets.
+The VPC contains:
+
+```text
+VPC
+|
++-- Public Subnet
+|     10.0.1.0/24
+|     us-east-1a
+|
++-- Public Subnet 2
+|     10.0.3.0/24
+|     us-east-1b
+|
++-- Private Subnet
+      10.0.2.0/24
+      us-east-1a
+```
+
+The second public subnet exists because an AWS Application Load Balancer requires subnets in at least two Availability Zones.
 
 ---
 
-## Public Subnet
+## Public Subnets
 
-Example CIDR:
+The public subnets have routes through an Internet Gateway.
+
+They are used by the Application Load Balancer.
 
 ```text
-10.0.1.0/24
+Public Subnet
+     |
+     v
+Route Table
+     |
+     v
+Internet Gateway
+     |
+     v
+Internet
 ```
 
-The public subnet is associated with a route table that routes internet-bound traffic through an Internet Gateway.
+The Application Load Balancer is deployed across:
 
-The public EC2 instance is deployed into this subnet.
+* `us-east-1a`
+* `us-east-1b`
 
 ---
 
 ## Private Subnet
 
-Example CIDR:
+The application EC2 instance is deployed in:
 
 ```text
 10.0.2.0/24
+us-east-1a
 ```
 
-The private subnet is used for infrastructure that should not require direct public internet exposure.
+The instance:
 
-The private EC2 instance is managed through AWS Systems Manager.
-
----
-
-## Internet Gateway
-
-The Internet Gateway provides internet connectivity for resources deployed in the public subnet.
-
-The public route table contains a default route through the Internet Gateway.
+* Has no public IP
+* Is not directly exposed to the Internet
+* Receives application traffic only from the ALB security group
+* Uses AWS Systems Manager for administration
+* Uses VPC endpoints for required AWS service connectivity
 
 ---
 
-## Route Tables
+# Application Load Balancer
 
-Route tables control network traffic within the VPC.
-
-The project uses separate routing configuration for the public and private subnet architecture.
-
----
-
-## Security Groups
-
-Security groups control network traffic to the EC2 instances.
-
-The project uses security groups to control inbound and outbound traffic according to the role of each instance.
-
----
-
-# EC2 Infrastructure
-
-The project provisions both public and private EC2 infrastructure.
+The Application Load Balancer provides the public entry point for the application.
 
 ```text
-AWS VPC
- |
- +---- Public Subnet
- |       |
- |       +---- Public EC2
- |
- +---- Private Subnet
-         |
-         +---- Private EC2
+Internet
+   |
+   v
+ALB :80
+   |
+   v
+Private EC2 :8000
+   |
+   v
+FastAPI
 ```
 
-The EC2 instances use IAM instance profiles rather than storing AWS credentials directly on the instances.
+The ALB:
+
+* Runs in two public subnets
+* Listens on HTTP port `80`
+* Forwards traffic to the private EC2 instance on port `8000`
+* Uses `/health` as the target health-check endpoint
+
+The target was successfully validated as healthy during deployment testing.
 
 ---
 
-# IAM Architecture
+# Private EC2
 
-The project separates IAM permissions for CI/CD and EC2 workloads.
+The application runs on a private EC2 instance.
+
+The instance:
+
+* Runs Amazon Linux
+* Uses `t3.micro`
+* Has no public IP
+* Runs Docker
+* Runs the FastAPI application
+* Uses an IAM instance profile
+* Is managed using AWS Systems Manager
+
+The EC2 security group allows application traffic on port `8000` only from the ALB security group.
+
+```text
+ALB Security Group
+        |
+        | TCP 8000
+        v
+Private EC2 Security Group
+```
+
+This avoids exposing the application port directly to the Internet.
+
+---
+
+# Docker Application
+
+The backend application is a FastAPI service packaged as a Docker image.
+
+The application exposes:
+
+```text
+GET /health
+```
+
+Example response:
+
+```json
+{
+  "status": "healthy",
+  "service": "cloud-provisioner-api"
+}
+```
+
+The Docker image was built through the GitHub Actions workflow and pushed to Amazon ECR.
+
+The image was then pulled from ECR by the private EC2 instance and started as a Docker container.
+
+---
+
+# Amazon ECR
+
+The project uses Amazon Elastic Container Registry as the container image registry.
 
 ```text
 GitHub Actions
       |
-      +---- Terraform Deployment Role
-
-
-Public EC2
+      v
+Docker Build
       |
-      +---- EC2 IAM Role
-
-
+      v
+Amazon ECR
+      |
+      v
 Private EC2
       |
-      +---- SSM IAM Role
+      v
+Docker Container
 ```
 
-This separation prevents the EC2 runtime roles from being used as the GitHub Actions deployment identity.
+The ECR repository is Terraform-managed.
 
-The GitHub Actions deployment role is dedicated to Terraform infrastructure operations.
+The repository uses immutable image tags and image scanning on push.
+
+---
+
+# VPC Endpoints
+
+The private EC2 instance does not use a NAT Gateway.
+
+Instead, VPC endpoints provide private connectivity to AWS services required by the instance.
+
+Configured endpoints include:
+
+### Interface endpoints
+
+```text
+com.amazonaws.us-east-1.ssm
+com.amazonaws.us-east-1.ssmmessages
+com.amazonaws.us-east-1.ec2messages
+com.amazonaws.us-east-1.ecr.api
+com.amazonaws.us-east-1.ecr.dkr
+```
+
+### Gateway endpoint
+
+```text
+com.amazonaws.us-east-1.s3
+```
+
+This allows the private instance to communicate with AWS services without requiring direct Internet connectivity.
+
+---
+
+# Why No NAT Gateway?
+
+A NAT Gateway was initially considered for private-subnet Internet access.
+
+It was intentionally removed from the final configuration because:
+
+* NAT Gateway introduces ongoing AWS charges
+* The project is intended for learning and portfolio use
+* The required AWS service communication can be handled through VPC endpoints
+* Docker Hub access is not required for the final deployment flow
+
+The final architecture therefore uses:
+
+```text
+Private EC2
+    |
+    +-- SSM VPC Endpoints
+    |
+    +-- ECR VPC Endpoints
+    |
+    +-- S3 Gateway Endpoint
+```
+
+instead of:
+
+```text
+Private EC2
+    |
+    v
+NAT Gateway
+    |
+    v
+Internet
+```
+
+This was both a cost-management and architecture decision.
 
 ---
 
 # AWS Systems Manager
 
-The private EC2 instance is configured to work with AWS Systems Manager.
+AWS Systems Manager Session Manager is used to manage the private EC2 instance.
 
-The architecture is:
+The instance receives an IAM role containing the required Systems Manager permissions.
+
+Management flow:
 
 ```text
+Developer
+    |
+    v
+AWS CLI
+    |
+    v
+SSM Session Manager
+    |
+    v
 Private EC2
-     |
-     v
-VPC Interface Endpoints
-     |
-     +---- SSM
-     |
-     +---- SSM Messages
-     |
-     +---- EC2 Messages
-     |
-     v
-AWS Systems Manager
 ```
 
-The private EC2 instance uses an IAM role with the required Systems Manager permissions.
+No public SSH access is required.
 
-This allows the instance to be managed without requiring direct public SSH access.
-
-The private EC2 instance was successfully accessed and managed using AWS Systems Manager Session Manager during project validation.
+During validation, an SSM session was successfully established with the private EC2 instance.
 
 ---
 
-# VPC Interface Endpoints
+# IAM Architecture
 
-The project creates interface VPC endpoints for Systems Manager communication.
+IAM permissions are separated according to workload responsibilities.
 
-The configured endpoints include:
+```text
+GitHub Actions
+      |
+      v
+GitHub OIDC
+      |
+      v
+AWS IAM Role
+      |
+      v
+ECR Operations
 
-* `ssm`
-* `ssmmessages`
-* `ec2messages`
 
-These endpoints provide private connectivity between the private EC2 instance and AWS Systems Manager services.
+Private EC2
+      |
+      v
+EC2 IAM Role
+      |
+      +-- Systems Manager
+      |
+      +-- ECR Image Pull
+```
 
-This allows the private EC2 instance to communicate with Systems Manager without requiring direct internet access.
+The EC2 instance does not store static AWS access keys.
+
+GitHub Actions also does not require long-lived AWS access keys for the ECR workflow.
+
+---
+
+# GitHub OIDC
+
+GitHub Actions authenticates with AWS using OpenID Connect.
+
+Authentication flow:
+
+```text
+GitHub Actions
+      |
+      | OIDC Token
+      v
+GitHub OIDC Provider
+      |
+      v
+AWS STS
+      |
+      | AssumeRoleWithWebIdentity
+      v
+IAM Role
+      |
+      v
+Temporary AWS Credentials
+```
+
+The IAM trust policy restricts which GitHub repository and branch/environment can assume the role.
+
+The project used the following IAM role:
+
+```text
+GitHubActions-ECR-CloudProvisioner
+```
+
+The OIDC configuration was tested by generating a GitHub OIDC token, assuming the AWS IAM role, authenticating with ECR, and pushing a Docker image.
+
+---
+
+# Why GitHub OIDC?
+
+Long-lived AWS access keys were intentionally avoided.
+
+Instead, GitHub Actions receives temporary AWS credentials through OIDC.
+
+Benefits include:
+
+* No long-lived AWS access keys in GitHub
+* Temporary credentials
+* IAM-controlled trust relationship
+* Repository/branch restrictions
+* Short-lived authentication
+* Clear separation between GitHub and AWS identity
 
 ---
 
@@ -324,21 +492,25 @@ terraform/
 |       +-- main.tf
 |       +-- variables.tf
 |       +-- outputs.tf
-|       +-- providers.tf
-|       +-- backend.tf
 |       +-- terraform.tfvars.example
 |
 +-- modules/
     |
-    +-- vpc/
+    +-- alb/
     |
     +-- ec2/
     |
-    +-- private_ec2/
+    +-- ecr/
+    |
+    +-- github_ecr/
     |
     +-- iam/
     |
+    +-- private_ec2/
+    |
     +-- ssm/
+    |
+    +-- vpc/
     |
     +-- vpc_endpoints/
 ```
@@ -353,22 +525,12 @@ Responsible for:
 
 * VPC
 * Public subnet
+* Second public subnet
 * Private subnet
 * Internet Gateway
-* Route tables
-* Route table associations
-* Network configuration
-
----
-
-## EC2 Module
-
-Responsible for:
-
-* Public EC2 instance
-* EC2 security group
-* Instance configuration
-* IAM instance profile association
+* Public route table
+* Private route table
+* Route associations
 
 ---
 
@@ -377,20 +539,10 @@ Responsible for:
 Responsible for:
 
 * Private EC2 instance
-* Private subnet deployment
-* Private instance configuration
-* Private network access
-
----
-
-## IAM Module
-
-Responsible for:
-
-* EC2 IAM role
-* EC2 IAM policy
-* IAM policy attachment
-* EC2 instance profile
+* Private EC2 security group
+* AMI selection
+* Instance profile association
+* Application port configuration
 
 ---
 
@@ -398,10 +550,10 @@ Responsible for:
 
 Responsible for:
 
-* SSM IAM role
-* SSM policy attachment
-* SSM instance profile
-* Systems Manager integration
+* EC2 SSM IAM role
+* Instance profile
+* Systems Manager permissions
+* ECR image-pull permissions
 
 ---
 
@@ -409,9 +561,46 @@ Responsible for:
 
 Responsible for:
 
-* SSM VPC endpoint
-* SSM Messages VPC endpoint
-* EC2 Messages VPC endpoint
+* SSM endpoint
+* SSM Messages endpoint
+* EC2 Messages endpoint
+* ECR API endpoint
+* ECR Docker endpoint
+* S3 gateway endpoint
+
+---
+
+## ALB Module
+
+Responsible for:
+
+* Application Load Balancer
+* ALB security group
+* Target group
+* Target attachment
+* HTTP listener
+* Health checks
+
+---
+
+## ECR Module
+
+Responsible for:
+
+* ECR repository
+* Repository configuration
+* Image scanning
+* Image tag mutability
+
+---
+
+## GitHub ECR Module
+
+Responsible for:
+
+* GitHub Actions IAM role
+* GitHub OIDC trust relationship
+* ECR-related deployment permissions
 
 ---
 
@@ -424,7 +613,7 @@ cloud-infrastructure-provisioner/
 |   |
 |   +-- workflows/
 |       |
-|       +-- terraform.yml
+|       +-- backend.yml
 |
 +-- backend/
 |
@@ -436,7 +625,10 @@ cloud-infrastructure-provisioner/
 |   |
 |   +-- modules/
 |       |
+|       +-- alb/
 |       +-- ec2/
+|       +-- ecr/
+|       +-- github_ecr/
 |       +-- iam/
 |       +-- private_ec2/
 |       +-- ssm/
@@ -451,17 +643,15 @@ cloud-infrastructure-provisioner/
 
 ---
 
-# CI/CD Pipeline
+# CI/CD Workflow
 
-The project uses GitHub Actions to automate Terraform validation, planning, and deployment.
-
-The workflow is located at:
+The GitHub Actions workflow is located at:
 
 ```text
-.github/workflows/terraform.yml
+.github/workflows/backend.yml
 ```
 
----
+The workflow handles backend validation, testing, Docker image creation, and ECR publishing.
 
 ## Pull Request Flow
 
@@ -469,208 +659,610 @@ The workflow is located at:
 Pull Request
       |
       v
-Terraform Format Check
+Checkout
       |
       v
-Terraform Init
+Python Setup
       |
       v
-Terraform Validate
+Install Dependencies
+      |
+      v
+Run Tests
+      |
+      v
+Docker Build
 ```
 
-Pull requests are validated before changes are merged.
+The pull request workflow validates the application before changes are merged.
 
 ---
 
-## Main Branch Deployment
+## Main Branch Flow
 
-When changes are pushed to the `main` branch:
+When code is pushed to `main`:
 
 ```text
 Push to main
       |
       v
-Terraform Format Check
+Checkout
       |
       v
-Terraform Init
+Python Setup
       |
       v
-Terraform Validate
+Install Dependencies
       |
       v
-Terraform Plan
+Run Tests
       |
       v
-Upload Terraform Plan
+Docker Build
       |
       v
-Environment Approval
+GitHub OIDC
       |
       v
-Terraform Apply
+AWS IAM Role
       |
       v
-AWS Infrastructure
+Amazon ECR Login
+      |
+      v
+Tag Docker Image
+      |
+      v
+Push Image to ECR
 ```
 
-This separates infrastructure validation, planning, approval, and deployment.
+The Docker image is tagged using the Git commit SHA.
+
+This provides an immutable reference between a Git commit and the container image deployed from it.
 
 ---
 
-# Manual Workflow Execution
+# Deployment Flow
 
-The workflow also supports manual execution through GitHub Actions.
-
-From GitHub:
+The validated application deployment followed this process:
 
 ```text
-Actions
-   |
-   +-- Terraform CI/CD
-          |
-          +-- Run workflow
-```
-
-The workflow can be manually triggered against the `main` branch.
-
----
-
-# GitHub OIDC Authentication
-
-The project uses GitHub OpenID Connect instead of storing long-lived AWS access keys in GitHub Actions.
-
-The authentication flow is:
-
-```text
+Developer
+    |
+    v
+GitHub
+    |
+    v
 GitHub Actions
-      |
-      | OIDC Token
-      v
-GitHub OIDC Provider
-      |
-      v
-AWS STS
-      |
-      v
-IAM Deployment Role
-      |
-      v
-Temporary AWS Credentials
-      |
-      v
-Terraform
+    |
+    +-- Tests
+    |
+    +-- Docker Build
+    |
+    +-- OIDC Authentication
+    |
+    v
+Amazon ECR
+    |
+    v
+Private EC2
+    |
+    v
+Docker Container
+    |
+    v
+FastAPI :8000
+    |
+    v
+Application Load Balancer :80
+    |
+    v
+Internet
 ```
 
-The dedicated AWS IAM role used by GitHub Actions is:
+The private EC2 instance successfully authenticated with ECR, pulled the application image, started the Docker container, and served the FastAPI health endpoint.
 
-```text
-GitHubActions-Terraform-CloudProvisioner
-```
-
-GitHub Actions assumes this role using:
-
-```text
-sts:AssumeRoleWithWebIdentity
-```
-
-The IAM trust policy restricts which GitHub repository and GitHub Environment can assume the role.
-
----
-
-# Why GitHub OIDC?
-
-Instead of storing long-lived AWS access keys in GitHub Secrets, this project uses OIDC to obtain temporary AWS credentials.
-
-Benefits include:
-
-* No long-lived AWS credentials stored in GitHub
-* Temporary AWS credentials
-* IAM-controlled trust relationship
-* Repository and environment restrictions
-* Separation between GitHub and AWS authentication
-
----
-
-# GitHub Environment Approval
-
-Terraform Apply is protected using the GitHub Environment:
-
-```text
-terraform-apply
-```
-
-The deployment flow is:
-
-```text
-Terraform Plan
-      |
-      v
-Terraform Plan Artifact
-      |
-      v
-Protected Environment
-      |
-      v
-Manual Approval
-      |
-      v
-Terraform Apply
-```
-
-This provides a manual approval gate before infrastructure changes are applied.
+The ALB then successfully returned the application's health response externally.
 
 ---
 
 # Terraform Remote State
 
-Terraform uses Amazon S3 as its remote backend.
-
-Remote state provides:
-
-* Persistent Terraform state
-* State availability across CI/CD runners
-* Centralized state storage
-* Support for automated deployments
-
-The Terraform state file is not committed to Git.
-
-The development backend bucket used by the project is:
+Terraform uses Amazon S3 for remote state.
 
 ```text
+S3 Bucket:
 shikhar-cloud-provisioner-tfstate-2026
 ```
 
-The backend is maintained separately from the infrastructure resources managed by the Terraform configuration.
+Backend configuration:
+
+```text
+Bucket:
+shikhar-cloud-provisioner-tfstate-2026
+
+Key:
+cloud-infrastructure-provisioner/dev/terraform.tfstate
+
+Region:
+us-east-1
+```
+
+Remote state provides:
+
+* Centralized state storage
+* Persistence between Terraform executions
+* CI/CD compatibility
+* State sharing between environments/tools
+* Protection against committing `terraform.tfstate` to Git
+
+Terraform state files are excluded from Git using `.gitignore`.
+
+The backend bucket is maintained separately from the infrastructure resources managed by the Terraform configuration.
 
 ---
 
-# Terraform Configuration
+# Security Design
 
-Example development configuration:
+The project demonstrates several security principles.
 
-```hcl
-environment         = "dev"
-vpc_cidr            = "10.0.0.0/16"
-public_subnet_cidr  = "10.0.1.0/24"
-availability_zone   = "us-east-1a"
-instance_type       = "t2.micro"
-private_subnet_cidr = "10.0.2.0/24"
-```
+## Private Application Host
 
-The actual:
+The application EC2 instance does not have a public IP.
 
 ```text
-terraform.tfvars
+Internet
+   |
+   v
+ALB
+   |
+   v
+Private EC2
 ```
 
-file is excluded from Git.
+---
 
-A template is provided:
+## Security Groups
+
+The private EC2 security group allows application traffic only from the ALB security group.
 
 ```text
-terraform.tfvars.example
+ALB SG
+ |
+ | TCP 8000
+ v
+Private EC2 SG
 ```
+
+The application port is therefore not directly exposed to the Internet.
+
+---
+
+## IAM Roles
+
+AWS credentials are not hard-coded into EC2 or application configuration.
+
+IAM roles are used through instance profiles.
+
+---
+
+## GitHub OIDC
+
+GitHub Actions uses temporary AWS credentials rather than long-lived AWS access keys.
+
+---
+
+## Systems Manager
+
+The private EC2 instance is managed through Session Manager instead of public SSH access.
+
+---
+
+## VPC Endpoints
+
+Private connectivity to AWS services is provided through VPC endpoints.
+
+---
+
+# Important Design Decisions
+
+## Why Private EC2?
+
+The application host does not need to be directly accessible from the Internet.
+
+Putting the EC2 instance in a private subnet provides:
+
+* Reduced public exposure
+* ALB-based application access
+* Security-group separation
+* SSM-based administration
+
+---
+
+## Why ALB?
+
+The ALB provides a controlled public entry point.
+
+It separates:
+
+```text
+Internet-facing traffic
+```
+
+from:
+
+```text
+Private application infrastructure
+```
+
+It also provides health checking and creates a foundation for future horizontal scaling.
+
+---
+
+## Why Two Public Subnets?
+
+AWS requires an Application Load Balancer to use subnets across at least two Availability Zones.
+
+Therefore the project uses:
+
+```text
+us-east-1a
+us-east-1b
+```
+
+for the ALB.
+
+---
+
+## Why VPC Endpoints Instead of NAT?
+
+The project does not require general Internet access from the private EC2 instance.
+
+VPC endpoints provide private connectivity to the AWS services required for:
+
+* Systems Manager
+* ECR
+* S3
+
+This avoids the recurring cost of a NAT Gateway for this learning environment.
+
+---
+
+## Why OIDC?
+
+OIDC removes the need to store long-lived AWS access keys in GitHub Actions.
+
+GitHub obtains temporary credentials through AWS STS after satisfying the IAM trust policy.
+
+---
+
+# Terraform Lifecycle
+
+The complete infrastructure lifecycle was tested using Terraform.
+
+```text
+terraform init
+      |
+      v
+terraform validate
+      |
+      v
+terraform plan
+      |
+      v
+terraform apply
+      |
+      v
+AWS Infrastructure
+      |
+      v
+Application Deployment
+      |
+      v
+terraform destroy
+```
+
+The infrastructure was successfully destroyed after validation.
+
+A subsequent Terraform plan showed that the infrastructure could be recreated from the Terraform configuration.
+
+This demonstrates reproducible Infrastructure as Code rather than infrastructure that exists only through manual AWS Console configuration.
+
+---
+
+# Validation Performed
+
+The project was validated at multiple layers.
+
+## Terraform
+
+```powershell
+terraform fmt -recursive
+terraform validate
+terraform plan
+terraform plan -destroy
+```
+
+Terraform validation completed successfully.
+
+---
+
+## GitHub Actions
+
+The workflow was successfully tested for:
+
+* Python dependency installation
+* Automated tests
+* Docker image build
+* GitHub OIDC authentication
+* AWS role assumption
+* ECR authentication
+* ECR image push
+
+---
+
+## AWS Systems Manager
+
+The private EC2 instance was successfully accessed using:
+
+```powershell
+aws ssm start-session --target <instance-id> --region us-east-1
+```
+
+---
+
+## Docker
+
+The application image was successfully:
+
+```text
+Built
+  |
+  v
+Pushed to ECR
+  |
+  v
+Pulled by private EC2
+  |
+  v
+Started as Docker container
+```
+
+---
+
+## Application Health Check
+
+Inside the private EC2 instance:
+
+```text
+GET http://localhost:8000/health
+```
+
+returned:
+
+```json
+{
+  "status": "healthy",
+  "service": "cloud-provisioner-api"
+}
+```
+
+---
+
+## ALB Validation
+
+The Application Load Balancer target was healthy.
+
+An external request to:
+
+```text
+http://<alb-dns-name>/health
+```
+
+returned HTTP `200` with the expected FastAPI health response.
+
+This validated the complete path:
+
+```text
+Internet
+   |
+   v
+ALB
+   |
+   v
+Private EC2
+   |
+   v
+Docker
+   |
+   v
+FastAPI
+```
+
+---
+
+# Challenges Solved
+
+## 1. Private EC2 AMI Selection
+
+An earlier AMI selection approach used a broad AMI filter that selected an unsuitable AWS image.
+
+The resulting instance did not successfully register with Systems Manager.
+
+The configuration was changed to use the AWS-managed Systems Manager parameter:
+
+```text
+/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+```
+
+This provided a predictable Amazon Linux AMI suitable for the project.
+
+---
+
+## 2. Private EC2 Connectivity
+
+The private instance initially required a way to communicate with AWS services without public Internet access.
+
+The final architecture uses VPC endpoints for:
+
+```text
+SSM
+SSM Messages
+EC2 Messages
+ECR API
+ECR Docker
+S3
+```
+
+---
+
+## 3. GitHub OIDC Trust Policy
+
+The GitHub OIDC configuration required the AWS IAM trust policy to match the actual GitHub token subject.
+
+The OIDC token claims were inspected and the trust relationship was corrected.
+
+This provided hands-on experience with:
+
+* GitHub OIDC
+* IAM trust policies
+* OIDC claims
+* AWS STS
+* `AssumeRoleWithWebIdentity`
+
+---
+
+## 4. AWS IAM Permissions
+
+Terraform encountered AWS authorization failures while creating resources.
+
+The required permissions were identified from AWS errors and added to the dedicated deployment role.
+
+Examples included:
+
+```text
+iam:CreateRole
+iam:TagRole
+iam:CreateInstanceProfile
+iam:AddRoleToInstanceProfile
+```
+
+This demonstrated how Terraform operations map to underlying AWS API permissions.
+
+Further IAM permission tightening remains an improvement area.
+
+---
+
+## 5. Application Load Balancer Availability Zones
+
+The initial ALB configuration used only one subnet.
+
+AWS requires an Application Load Balancer to span at least two Availability Zones.
+
+A second public subnet was therefore added:
+
+```text
+Public Subnet 1
+us-east-1a
+
+Public Subnet 2
+us-east-1b
+```
+
+---
+
+## 6. ECR Repository Cleanup
+
+Terraform destroy initially could not remove the ECR repository because it still contained a Docker image.
+
+The image was removed and the ECR repository was then deleted successfully.
+
+This demonstrated an important Infrastructure-as-Code lifecycle consideration:
+
+```text
+Terraform resource dependency
+          +
+Resource contents
+          |
+          v
+Destroy order matters
+```
+
+---
+
+# Cost Management
+
+AWS cost was considered throughout the project.
+
+The following decisions were made specifically to keep the learning environment inexpensive:
+
+* NAT Gateway was removed
+* NAT Gateway Elastic IP was removed
+* Private connectivity uses VPC endpoints where appropriate
+* EC2 instances use small instance types
+* Infrastructure was destroyed after validation
+* ECR resources were cleaned up after testing
+
+The Terraform S3 backend remains separately because it stores the Terraform state.
+
+---
+
+# Project Status
+
+| Component                       | Status                             |
+| ------------------------------- | ---------------------------------- |
+| Terraform Infrastructure        | ✅                                  |
+| Terraform Modules               | ✅                                  |
+| AWS VPC                         | ✅                                  |
+| Public Subnets                  | ✅                                  |
+| Private Subnet                  | ✅                                  |
+| Private EC2                     | ✅                                  |
+| IAM                             | ✅                                  |
+| AWS Systems Manager             | ✅                                  |
+| VPC Interface Endpoints         | ✅                                  |
+| S3 Gateway Endpoint             | ✅                                  |
+| S3 Remote Terraform State       | ✅                                  |
+| Amazon ECR                      | ✅                                  |
+| Docker Application              | ✅                                  |
+| Application Load Balancer       | ✅                                  |
+| GitHub Actions                  | ✅                                  |
+| GitHub OIDC                     | ✅                                  |
+| Docker Image Push               | ✅                                  |
+| Private EC2 ECR Pull            | ✅                                  |
+| ALB Health Check                | ✅                                  |
+| External Application Validation | ✅                                  |
+| Terraform Destroy               | ✅                                  |
+| CloudWatch Monitoring           | Planned                            |
+| Automated Infrastructure Tests  | Planned                            |
+| IAM Least-Privilege Refinement  | Planned                            |
+| Infrastructure Drift Detection  | Planned                            |
+| Production Monitoring/Alerting  | Planned                            |
+| Kubernetes/ECS Deployment       | Not part of current implementation |
+
+> **Current AWS state:** The project infrastructure used for validation has been destroyed with Terraform. The Terraform configuration remains capable of recreating the environment.
+
+---
+
+# Future Improvements
+
+Possible future improvements include:
+
+* CloudWatch application and infrastructure logging
+* CloudWatch alarms
+* Cost monitoring and budget alerts
+* Automated Terraform infrastructure tests
+* More granular IAM resource-level permissions
+* Infrastructure drift detection
+* Multiple Terraform environments
+* Automated application deployment directly from CI/CD
+* Blue/green or rolling deployment strategy
+* Auto Scaling Group
+* HTTPS using ACM
+* Route 53 integration
+* ECS deployment
+* Kubernetes deployment
+
+These are intentionally outside the current implementation.
 
 ---
 
@@ -683,6 +1275,8 @@ Install:
 * Terraform
 * AWS CLI
 * Git
+* Docker
+* Python
 * An AWS account
 
 Verify Terraform:
@@ -703,6 +1297,12 @@ Verify AWS authentication:
 aws sts get-caller-identity
 ```
 
+Verify Docker:
+
+```powershell
+docker --version
+```
+
 ---
 
 # Initialize Terraform
@@ -721,27 +1321,29 @@ terraform init
 
 ---
 
-# Create Variables File
+# Configure Variables
 
-## Windows
+Create a local variables file from the example:
+
+### Windows
 
 ```powershell
 copy terraform.tfvars.example terraform.tfvars
 ```
 
-## Linux / macOS
+### Linux/macOS
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Update the values in `terraform.tfvars` if required.
+Update the values if required.
+
+The actual `terraform.tfvars` file should not be committed to Git.
 
 ---
 
 # Format Terraform
-
-Format the configuration:
 
 ```powershell
 terraform fmt -recursive
@@ -757,366 +1359,89 @@ terraform fmt -check -recursive
 
 # Validate Terraform
 
-Run:
-
 ```powershell
 terraform validate
 ```
 
-This validates the Terraform configuration and reports syntax or configuration errors.
-
 ---
 
-# Terraform Plan
-
-Generate an execution plan:
+# Review Infrastructure Changes
 
 ```powershell
 terraform plan
 ```
 
-Review the resources Terraform intends to create, modify, or destroy.
+Review the resources Terraform intends to create or modify before applying.
 
 ---
 
-# Terraform Apply
-
-To deploy the infrastructure locally:
+# Deploy Infrastructure
 
 ```powershell
 terraform apply
 ```
 
-Review the proposed changes before confirming.
-
-For CI/CD deployments, Terraform Apply is executed through GitHub Actions after the protected environment approval.
+Review the proposed changes and confirm when appropriate.
 
 ---
 
-# Terraform Destroy
+# Destroy Infrastructure
 
-When the infrastructure is no longer required:
+When the environment is no longer required:
 
 ```powershell
 terraform destroy
 ```
 
-Terraform will display the resources that will be removed.
-
-Review the destruction plan carefully and confirm with:
-
-```text
-yes
-```
+Review the destruction plan carefully before confirming.
 
 The S3 backend should be treated separately because it stores Terraform state.
 
 ---
 
-# Security Practices
-
-The project demonstrates several security practices.
-
-## GitHub OIDC
-
-Long-lived AWS credentials are not stored in GitHub Actions.
-
-GitHub uses OIDC to assume a dedicated AWS IAM role.
-
-## IAM Roles
-
-EC2 instances use IAM roles instead of hard-coded AWS credentials.
-
-## Private Infrastructure
-
-The private EC2 instance is deployed into a private subnet.
-
-## Systems Manager
-
-AWS Systems Manager is used to manage the private EC2 instance.
-
-## VPC Endpoints
-
-Interface VPC endpoints provide private connectivity to Systems Manager services.
-
-## Deployment Approval
-
-Terraform Apply requires approval through the protected GitHub Environment.
-
-## Remote State
-
-Terraform state is stored remotely in Amazon S3 rather than committed to Git.
-
----
-
-# CI/CD Security Model
-
-The deployment architecture can be summarized as:
-
-```text
-GitHub Repository
-       |
-       v
-GitHub Actions
-       |
-       | OIDC
-       v
-AWS IAM Deployment Role
-       |
-       | Temporary Credentials
-       v
-Terraform
-       |
-       v
-AWS Infrastructure
-```
-
-The GitHub Actions deployment role is separate from the EC2 instance roles.
-
-```text
-CI/CD Permissions
-        !=
-EC2 Runtime Permissions
-```
-
-This separation reduces the risk of using workload permissions for infrastructure deployment.
-
----
-
-# Testing and Validation
-
-The CI/CD workflow currently performs Terraform validation before deployment.
-
-Current validation includes:
-
-```text
-terraform fmt -check -recursive
-terraform init
-terraform validate
-terraform plan
-```
-
-The deployment process also generates a Terraform Plan before Apply.
-
-```text
-Terraform Plan
-      |
-      v
-Review / Approval
-      |
-      v
-Terraform Apply
-```
-
-This provides an opportunity to review infrastructure changes before they are applied.
-
-Automated infrastructure testing is planned as a future improvement.
-
----
-
-# Challenges Solved
-
-## GitHub OIDC Trust Policy
-
-The initial OIDC trust relationship did not match the actual subject claim generated by the GitHub Environment.
-
-The OIDC token claims were inspected and the AWS IAM trust policy was updated to match the repository and environment subject.
-
-This provided practical experience working with:
-
-* GitHub OIDC
-* IAM trust policies
-* OIDC subject claims
-* AWS STS
-* `AssumeRoleWithWebIdentity`
-
----
-
-## IAM Permissions
-
-The GitHub Actions deployment role initially lacked several permissions required by Terraform during resource creation.
-
-The missing permissions were identified from AWS authorization errors and added incrementally to the dedicated deployment policy.
-
-Examples included:
-
-```text
-iam:CreateRole
-iam:TagRole
-iam:CreateInstanceProfile
-iam:AddRoleToInstanceProfile
-```
-
-This provided practical experience troubleshooting AWS IAM authorization failures and understanding how Terraform resource operations map to AWS API permissions.
-
-Further IAM permission tightening and resource-level restrictions are planned as a future improvement.
-
----
-
-## Private EC2 and Systems Manager
-
-The private EC2 instance required additional configuration for Systems Manager connectivity.
-
-The final configuration uses:
-
-* SSM IAM permissions
-* SSM Agent
-* VPC interface endpoints
-* VPC DNS support
-
-The private EC2 instance was successfully managed through AWS Systems Manager Session Manager.
-
----
-
-# Lessons Learned
+# Learning Outcomes
 
 This project provided hands-on experience with:
 
-* Terraform Infrastructure as Code
-* Terraform module design
-* AWS VPC networking
+* Infrastructure as Code
+* Terraform modules
+* Terraform state management
+* AWS VPC
+* CIDR addressing
 * Public and private subnets
 * Route tables
 * Internet Gateway
 * Security groups
-* EC2 provisioning
+* EC2
 * IAM roles
 * IAM policies
 * IAM instance profiles
 * AWS Systems Manager
-* VPC interface endpoints
-* S3 remote Terraform state
+* VPC endpoints
+* Amazon ECR
+* Docker
+* Application Load Balancer
 * GitHub Actions
 * GitHub OIDC
 * AWS STS
 * IAM trust policies
-* CI/CD environment approvals
-* Terraform state management
-* AWS permission troubleshooting
+* Temporary AWS credentials
+* CI/CD workflows
+* AWS troubleshooting
 * Infrastructure lifecycle management
+* AWS cost management
 
 ---
 
-# Future Improvements
+# Key Takeaways
 
-Potential future improvements include:
-
-* Further tightening IAM permissions
-* Additional Terraform variable validation
-* Automated Terraform infrastructure tests
-* Multiple Terraform environments
-* Improved Terraform Plan reporting
-* Cost monitoring and budget alerts
-* Infrastructure drift detection
-* Automated application deployment
-* Dockerized application deployment
-* Amazon ECR integration
-* Amazon ECS deployment
-* Application Load Balancer integration
-* Monitoring and logging
-
-These features are planned separately and are not part of the current implementation.
-
----
-
-# Project Outcomes
-
-The project successfully demonstrates an end-to-end Infrastructure-as-Code CI/CD workflow.
+The main architectural lessons from this project were:
 
 ```text
-Developer
-    |
-    v
-GitHub
-    |
-    v
-GitHub Actions
-    |
-    +---- Terraform Format
-    |
-    +---- Terraform Validate
-    |
-    +---- Terraform Plan
-    |
-    v
-Environment Approval
-    |
-    v
-GitHub OIDC
-    |
-    v
-AWS IAM Role
-    |
-    v
-Terraform Apply
-    |
-    v
-AWS Infrastructure
-```
-
-The infrastructure can be:
-
-* Provisioned using Terraform
-* Validated through CI/CD
-* Planned before deployment
-* Applied after approval
-* Managed through AWS Systems Manager
-* Destroyed using Terraform
-
----
-
-# Project Status
-
-| Component                      | Status  |
-| ------------------------------ | ------- |
-| Terraform Infrastructure       | ✅       |
-| Terraform Modules              | ✅       |
-| AWS VPC                        | ✅       |
-| Public Subnet                  | ✅       |
-| Private Subnet                 | ✅       |
-| EC2                            | ✅       |
-| IAM                            | ✅       |
-| AWS Systems Manager            | ✅       |
-| VPC Interface Endpoints        | ✅       |
-| S3 Remote State                | ✅       |
-| GitHub Actions                 | ✅       |
-| GitHub OIDC                    | ✅       |
-| Environment Approval           | ✅       |
-| Terraform Validation           | ✅       |
-| Infrastructure Destroy         | ✅       |
-| Automated Infrastructure Tests | Planned |
-| IAM Least-Privilege Tightening | Planned |
-
----
-
-# Author
-
-**Shikhar Verma**
-
-B.Tech Information Technology
-
-Cloud / DevOps Engineer
-
-### Technologies
-
-* AWS
-* Terraform
-* GitHub Actions
-* GitHub OIDC
-* Python
-* Linux
-* Docker
-* Git
-* CI/CD
-* Infrastructure as Code
-* Cloud Infrastructure
-
-### GitHub
-
-https://github.com/shikharvermasv
-
----
-
-# License
-
-This project is intended for educational, learning, and portfolio purposes.
+Public infrastructure
+        |
+        v
+Application Load Balancer
+        |
+        v
+Private applicatio
